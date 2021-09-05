@@ -75,7 +75,8 @@ Z_SCORE_TABLE = {
 
 
 def z_score_from_percentile(percentile) -> float:
-    percentile = Decimal(percentile).quantize(Decimal('0.001'))
+    """Get the Z score from a given percentile using the Z score table. Percentiles must be between 0.0002 and 0.9998. Returns the Z score as a float."""
+    percentile = float(Decimal(percentile).quantize(Decimal('0.0001')))
     z_value = ""
     direction = ""
 
@@ -96,40 +97,37 @@ def z_score_from_percentile(percentile) -> float:
             z_value = str(z_key)
             break
     else:
-        print('ERROR: Given percentile was not found in the Z Score Table')
+        print(
+            f"ERROR: Given percentile {percentile} wasn't found in the Z-Score table. Z-score values only include percentiles from 0.002 to 0.9998.")
         quit()
 
     closest = 9999
-    closest_z_identifier = ""
     # used to identify closest z_value_identifier in Z TABLE
     percentile_identifier = float("." + str(percentile).split('.')[-1])
-    
+
     for i, z_score_value in enumerate(Z_SCORE_TABLE[str(z_value)]):
         if abs(percentile_identifier - z_score_value) < closest:
             closest = abs(percentile_identifier - z_score_value)
             z_value_identifier = str(i)
+    z_value += z_value_identifier
 
-    if closest >= 9999:
-        print('ERROR: Given percentile was not found in the Z Score Table')
-        quit()
-    else:
-        z_value += z_value_identifier
-
-    z_value = float(z_value)
-    return z_value
+    return float(z_value)
 
 
-def observation_from_percentile(percentile, mean: float, sd: float):
+def observation_from_percentile(percentile, mean: float, sd: float) -> float:
+    """Get an observation value from a given percentile. Percentiles must be between 0.0002 and 0.9998. Mean and standard deviation must also be provided. Returns the observation value as a float."""
     z_value = z_score_from_percentile(percentile)
     observation = observation_from_z_score(z_value, mean, sd)
-    return observation
+    return float(observation)
 
 
 def observation_from_z_score(z_score: float, mean: float, sd: float) -> float:
+    """Get the observation value from a given Z score. Percentiles must be between 0.0002 and 0.9998. Mean and standard deviation must also be provided. Returns the observation as a float."""
     return (z_score * sd) + mean
 
 
-def percentile_from_z_score(z_score: Decimal) -> float:
+def percentile_from_z_score(z_score: float) -> float:
+    """Get the percentile from a Z score using the Z score table. Returns the percentile as a float between 0 and 1."""
     z_score = str(Decimal(z_score).quantize(Decimal('0.01')))
 
     z_key = z_score[0:-1]
@@ -141,19 +139,20 @@ def percentile_from_z_score(z_score: Decimal) -> float:
 
 
 def z_score_from_observation(obsv: float, mean: float, sd: float) -> float:
+    """Get the Z score from an observation. Mean and standard deviation must also be provided. Returns the Z score as a float."""
     z_score = (obsv - mean) / sd
     return Decimal(z_score).quantize(Decimal('0.01'))
 
 
 def percentile_from_observation(obsv: float, mean: float, sd: float) -> float:
+    """Get the percentile from an observation. Mean and standard deviation must also be provided. Returns the percentile as a float between 0 and 1."""
     z_score = z_score_from_observation(obsv, mean, sd)
     percentile = percentile_from_z_score(z_score)
     return percentile
 
 
-
-
 def percentage_between_observations(lower_obsv: float, higher_obsv: float, mean: float, sd: float) -> float:
+    """Get the percentage between two observations. Mean and standard deviation must also be provided. Returns a percentage as a float between 0 and 1."""
     z_high = z_score_from_observation(higher_obsv, mean, sd)
     z_low = z_score_from_observation(lower_obsv, mean, sd)
 
@@ -166,18 +165,28 @@ def percentage_between_observations(lower_obsv: float, higher_obsv: float, mean:
     return percent_high - percent_low
 
 
-def percentage_between_z_scores(lower_z_score: float, higher_z_score: float, mean: float, sd: float) -> float:
+def percentage_between_z_scores(lower_z_score: float, higher_z_score: float) -> float:
+    """Get the percentage between two Z scores. Returns a percentage as a float between 0 and 1."""
     percent_high = percentile_from_observation(higher_z_score)
     percent_low = percentile_from_observation(lower_z_score)
 
     return percent_high - percent_low
 
 
+def quartiles(mean: float, sd: float) -> tuple:
+    min_value = observation_from_percentile(0.0002, mean, sd)
+    q1 = observation_from_percentile(0.25, mean, sd)
+    median = observation_from_percentile(0.5, mean, sd)
+    q3 = observation_from_percentile(0.75, mean, sd)
+    max_value = observation_from_percentile(0.9998, mean, sd)
+    iqr = float(Decimal(q3 - q1).quantize(Decimal('0.01')))
+
+    data = (min_value, q1, median, q3, max_value, iqr)
+    return data
 
 
 if __name__ == '__main__':
     MEAN = 100
     SD = 16
-    answer = z_score_from_percentile(0.3)
-    answer = observation_from_z_score(answer, MEAN, SD)
+    answer = quartiles(MEAN, SD)
     print(answer)
