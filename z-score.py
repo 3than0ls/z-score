@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 Z_SCORE_TABLE = {
     "-3.4": [.0003, .0003, .0003, .0003, .0003, .0003, .0003, .0003, .0003, .0002],
@@ -76,7 +76,8 @@ Z_SCORE_TABLE = {
 
 def z_score_from_percentile(percentile) -> float:
     """Get the Z score from a given percentile using the Z score table. Percentiles must be between 0.0002 and 0.9998. Returns the Z score as a float."""
-    percentile = float(Decimal(percentile).quantize(Decimal('0.0001')))
+    percentile = float(Decimal(percentile).quantize(
+        Decimal('0.0001'), ROUND_HALF_UP))
     z_value = ""
     direction = ""
 
@@ -128,7 +129,7 @@ def observation_from_z_score(z_score: float, mean: float, sd: float) -> float:
 
 def percentile_from_z_score(z_score: float) -> float:
     """Get the percentile from a Z score using the Z score table. Returns the percentile as a float between 0 and 1."""
-    z_score = str(Decimal(z_score).quantize(Decimal('0.01')))
+    z_score = str(Decimal(z_score).quantize(Decimal('0.01'), ROUND_HALF_UP))
 
     z_key = z_score[0:-1]
     z_value = z_score[-1]
@@ -141,7 +142,7 @@ def percentile_from_z_score(z_score: float) -> float:
 def z_score_from_observation(obsv: float, mean: float, sd: float) -> float:
     """Get the Z score from an observation. Mean and standard deviation must also be provided. Returns the Z score as a float."""
     z_score = (obsv - mean) / sd
-    return Decimal(z_score).quantize(Decimal('0.01'))
+    return Decimal(z_score).quantize(Decimal('0.01'), ROUND_HALF_UP)
 
 
 def percentile_from_observation(obsv: float, mean: float, sd: float) -> float:
@@ -179,7 +180,7 @@ def quartiles(mean: float, sd: float) -> tuple:
     median = observation_from_percentile(0.5, mean, sd)
     q3 = observation_from_percentile(0.75, mean, sd)
     max_value = observation_from_percentile(0.9998, mean, sd)
-    iqr = float(Decimal(q3 - q1).quantize(Decimal('0.01')))
+    iqr = float(Decimal(q3 - q1).quantize(Decimal('0.01'), ROUND_HALF_UP))
 
     data = (min_value, q1, median, q3, max_value, iqr)
     return data
