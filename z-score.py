@@ -154,11 +154,11 @@ def percentile_from_observation(obsv: float, mean: float, sd: float) -> float:
 
 def percentage_between_observations(lower_obsv: float, higher_obsv: float, mean: float, sd: float) -> float:
     """Get the percentage between two observations. Mean and standard deviation must also be provided. Returns a percentage as a float between 0 and 1."""
-    z_high = z_score_from_observation(higher_obsv, mean, sd)
     z_low = z_score_from_observation(lower_obsv, mean, sd)
+    z_high = z_score_from_observation(higher_obsv, mean, sd)
 
+    print(f"Z Value for lower observation of {lower_obsv}:", z_low)
     print(f"Z Value for upper observation of {higher_obsv}:", z_high)
-    print(f"Z Value for upper observation of {lower_obsv}:", z_low)
 
     percent_high = percentile_from_z_score(z_high)
     percent_low = percentile_from_z_score(z_low)
@@ -168,8 +168,8 @@ def percentage_between_observations(lower_obsv: float, higher_obsv: float, mean:
 
 def percentage_between_z_scores(lower_z_score: float, higher_z_score: float) -> float:
     """Get the percentage between two Z scores. Returns a percentage as a float between 0 and 1."""
-    percent_high = percentile_from_observation(higher_z_score)
-    percent_low = percentile_from_observation(lower_z_score)
+    percent_high = percentile_from_z_score(higher_z_score)
+    percent_low = percentile_from_z_score(lower_z_score)
 
     return percent_high - percent_low
 
@@ -186,8 +186,74 @@ def quartiles(mean: float, sd: float) -> tuple:
     return data
 
 
+def exit_script():
+    quit()
+
+
 if __name__ == '__main__':
-    MEAN = 100
-    SD = 16
-    answer = quartiles(MEAN, SD)
-    print(answer)
+    OPERATIONS = {
+        "1":  z_score_from_percentile,
+        "2":  observation_from_percentile,
+        "3":  observation_from_z_score,
+        "4":  percentile_from_z_score,
+        "5":  z_score_from_observation,
+        "6":  percentile_from_observation,
+        "7":  percentage_between_observations,
+        "8":  percentage_between_z_scores,
+        "9":  quartiles,
+        "0":  exit_script
+    }
+
+    for i, func_name in OPERATIONS.items():
+        op_name = " ".join([string.capitalize()
+                           for string in func_name.__name__.split("_")])
+        print(f"{i}: {op_name}")
+
+    op = input('Enter operation number:\n')
+
+    func = OPERATIONS[op]
+    params = func.__code__.co_varnames[:func.__code__.co_argcount]
+    inputs = []
+
+    print(
+        f"Operation selected: {' '.join([string.capitalize() for string in func.__name__.split('_')])}")
+
+    if func.__name__ == "exit_script":
+        exit_script()
+
+    for param in params:
+        if param == "percentile":
+            value = input("Enter percentile value (from 0.0002 to 0.9998): ")
+        elif param == "mean":
+            value = input("Enter mean value: ")
+        elif param == "sd":
+            value = input("Enter standard deviation value: ")
+        elif param == "z_score":
+            value = input("Enter Z score value (from -3.4 to 3.4): ")
+        elif param == "lower_z_score":
+            value = input("Enter LOWER Z score value (from -3.4 to 3.4): ")
+        elif param == "higher_z_score":
+            value = input("Enter HIGHER Z score value (from -3.4 to 3.4): ")
+        elif param == "obsv":
+            value = input("Enter observation value: ")
+        elif param == "lower_obsv":
+            value = input("Enter LOWER observation value: ")
+        elif param == "higher_obsv":
+            value = input("Enter HIGHER observation value: ")
+
+        inputs.append(float(value))
+
+    print('\nOutput:')
+
+    try:
+        output = func(*inputs)
+    except KeyError:
+        print("An error has occurred. This has likely occured because the values you inputted exceed the Z score minimum or maximum of -3.4 or 3.4 respectively.")
+        print("This means that your inputted values are practically incorrect. Check if you have entered them correctly.")
+        quit()
+
+    if func.__name__ == "quartiles":
+        print(
+            f"Minimum: {output[0]}\nQuartile 1: {output[1]}\nMedian: {output[2]}\nQuartile 3: {output[3]}\nMaximum: {output[4]}\nIQR: {output[5]}")
+    else:
+        print(output)
